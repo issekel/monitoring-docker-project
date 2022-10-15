@@ -1,0 +1,34 @@
+version: '3.7'
+
+services:
+
+  {{ inventory_grafana_hostname }}:
+    image: grafana/grafana:{{ inventory_grafana_tag }}
+    hostname: {{ inventory_grafana_hostname }}
+    container_name: {{ inventory_grafana_hostname }}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD={{ inventory_grafana_admin_password }}
+      - GF_SERVER_DOMAIN={{ inventory_grafana_host }}
+#      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,vonage-status-panel,grafana-polystat-panel,blackmirror1-statusbygroup-panel
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:3000/
+    networks:
+      - {{ inventory_monitoring_network }}
+    ports:
+      - {{ inventory_grafana_port }}:3000
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}
+    external: true
+
+volumes:
+  grafana-data:

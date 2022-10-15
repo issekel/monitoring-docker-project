@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_thanos_query_hostname }}:
+    image: quay.io/thanos/thanos:{{ inventory_thanos_tag }}
+    hostname: {{ inventory_thanos_query_hostname }}
+    container_name: {{ inventory_thanos_query_hostname }}
+    ports:
+      - 10901:10901
+      - 10902:10902
+    command:
+      - query
+      - --grpc-address=0.0.0.0:10901
+      - --http-address=0.0.0.0:10902
+      - --query.auto-downsampling
+      - --query.max-concurrent=20
+      - --query.max-concurrent-select=4
+      - --store.response-timeout=30000ms
+
+      # Sidecar on monitoring
+      - --store={{ inventory_prometheus_host }}:10915
+
+      # Thanos Store Gateway
+      - --store={{ inventory_thanos_store_host }}:10903
+
+{% for host in groups['complex'] %}
+      - --store={{ hostvars[host].ansible_host }}:10901
+{% endfor %}
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+    restart: always

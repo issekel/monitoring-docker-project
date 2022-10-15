@@ -1,0 +1,44 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://{{ inventory_prometheus_hostname }}:9090
+    basicAuth: false
+    isDefault: true
+    editable: false
+
+{% if inventory_thanos | default("false") == "true" %}
+  - name: Thanos
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://{{ inventory_thanos_query_host }}:10902
+    basicAuth: false
+    isDefault: false
+    editable: false
+{% endif %}
+
+  - name: Loki
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://{{ inventory_loki_hostname }}:3100
+    basicAuth: false
+    isDefault: false
+    editable: false
+
+{% if inventory_monitoring_complex| default("false") == "true" %}
+{% for host in groups['complex'] %}
+  - name: Loki-{{ hostvars[host].complex_name }}
+    type: loki
+    access: proxy
+    orgId: 1
+    url: http://{{ hostvars[host].ansible_host }}:3100
+    basicAuth: false
+    isDefault: false
+    editable: false
+{% endfor %}
+{% endif %}

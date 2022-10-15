@@ -1,0 +1,30 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_prometheus_hostname }}:
+    image: prom/prometheus:{{ inventory_prometheus_tag }}
+    hostname: {{ inventory_prometheus_hostname }}
+    container_name: {{ inventory_prometheus_hostname }}
+    network_mode: "host"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      # - --log.level=debug
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.max-block-duration=2h
+      - --storage.tsdb.min-block-duration=2h
+      - --web.enable-lifecycle
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "10"
+
+
+volumes:
+  prometheus_data: {}

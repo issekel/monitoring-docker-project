@@ -1,0 +1,99 @@
+groups:
+- name: node-exporter-rules
+  rules:
+  # The count of CPUs per node, useful for getting CPU time as a percent of total.
+  - record: instance:node_cpus:count
+    expr: count(node_cpu_seconds_total{mode="idle"}) without (cpu,mode)
+
+  # CPU in use by CPU.
+  - record: instance_cpu:node_cpu_seconds_not_idle:rate5m
+    expr: sum(rate(node_cpu_seconds_total{mode!="idle"}[5m])) without (mode)
+
+  # CPU in use by mode.
+  - record: instance_mode:node_cpu_seconds:rate5m
+    expr: sum(rate(node_cpu_seconds_total[5m])) without (cpu)
+
+  # CPU in use ratio.
+  - record: instance:node_cpu_utilization:ratio
+    expr: sum(instance_mode:node_cpu_seconds:rate5m{mode!="idle"}) without (mode) / instance:node_cpus:count
+{% raw %}
+# Please add ignored mountpoints in node_exporter parameters like
+# "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/)".
+# Same rule using "node_filesystem_free_bytes" will fire when disk fills for non-root users.
+
+# 1000 context switches is an arbitrary number.
+# Alert threshold depends on nature of application.
+# Please read: https://github.com/samber/awesome-prometheus-alerts/issues/58
+#- alert: HostContextSwitching
+#  expr: (rate(node_context_switches_total[5m])) / (count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})) > 2000
+#  for: 0m
+#  labels:
+#    severity: warning
+#  annotations:
+#    summary: Host context switching | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#    description: "Context switching is growing on node (> 2000 / s)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+#  - alert: RedisNotEnoughConnections
+#    expr: redis_connected_clients < 5
+#    for: 2m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Redis not enough connections | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#      description: "Redis instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+#- alert: HostNetworkInterfaceSaturated
+#  expr: (rate(node_network_receive_bytes_total{device!~"^tap.*"}[3m]) + rate(node_network_transmit_bytes_total{device!~"^tap.*"}[3m])) / node_network_speed_bytes{device!~"^tap.*"} > 0.8 < 10000
+#  for: 1m
+#  labels:
+#    severity: warning
+#  annotations:
+#    summary: Host Network Interface Saturated | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#    description: "The network interface \"{{ $labels.device }}\" on \"{{ $labels.instance }}\" is getting overloaded.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+
+#  - alert: RedisOutOfConfiguredMaxmemory
+#    expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+#    for: 2m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Redis out of configured maxmemory | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#      description: "Redis is running out of configured maxmemory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+#  - alert: RedisTooManyMasters
+#    expr: count(redis_instance_info{role="master"}) > 1
+#    for: 0m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Redis too many masters | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#      description: "Redis cluster has too many nodes marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+# - alert: PostgresqlHighRollbackRate
+#   expr: rate(pg_stat_database_xact_rollback{datname!~"template.*"}[3m]) / rate(pg_stat_database_xact_commit{datname!~"template.*"}[3m]) > 0.02
+#   for: 0m
+#   labels:
+#     severity: critical
+#   annotations:
+#     summary: Postgresql high rollback rate | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#     description: "Ratio of transactions being aborted compared to committed is > 2 %\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+#  - alert: PostgresqlCommitRateLow
+#    expr: rate(pg_stat_database_xact_commit[1m]) < 10
+#    for: 2m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Postgresql commit rate low | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#      description: "Postgres seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+#  - alert: PostgresqlNotEnoughConnections
+#    expr: sum by (datname) (pg_stat_activity_count{datname!~"template.*|postgres"}) < 5
+#    for: 2m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Postgresql not enough connections | {{ $labels.project }} {{ $labels.instance }} {{ $labels.node }}
+#      description: "PostgreSQL instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+{% endraw %}

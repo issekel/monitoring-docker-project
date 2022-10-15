@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_consul_server_hostname }}:
+    image: consul:{{ inventory_consul_server_tag }}
+    hostname: {{ inventory_consul_server_hostname }}
+    container_name: {{ inventory_consul_server_hostname }}
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./config:/consul/config/
+      - 'consul_data:/consul/data'
+    environment:
+      - CONSUL_NODE_NAME=consul-server
+      - CONSUL_AGENT_MODE=server
+      - CONSUL_ENABLE_UI=true
+      - CONSUL_CLIENT_LAN_ADDRESS={{ inventory_network_address }}
+      - CONSUL_DISABLE_KEYRING_FILE=true
+      - CONSUL_RETRY_JOIN_ADDRESS={{ inventory_consul_server_hostname }}
+      - CONSUL_BIND_INTERFACE={{ inventory_interface_consul }}
+    command: "agent -bootstrap-expect=1"
+
+volumes:
+  consul_data:

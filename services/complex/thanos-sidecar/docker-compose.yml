@@ -1,0 +1,40 @@
+# Внимание!
+# Этот сервис использует external volume сервиса prometheus.
+# Сначала нужно развернуть сервис prometheus.
+
+version: "3.7"
+
+services:
+
+  {{ inventory_thanos_sidecar_hostname }}:
+    image: quay.io/thanos/thanos:{{ inventory_thanos_tag }}
+    hostname: {{ inventory_thanos_sidecar_hostname }}
+    container_name: {{ inventory_thanos_sidecar_hostname }}
+    network_mode: "host"
+    volumes:
+      - prometheus_prometheus_data:/prometheus
+    command:
+      - sidecar
+      - --tsdb.path=/prometheus
+      - --grpc-address=0.0.0.0:10901
+      - --http-address=0.0.0.0:10902
+      - --prometheus.url=http://localhost:9090
+      - |
+        --objstore.config=type: S3
+        config:
+          bucket: "transit-node-exporter-metrics"
+          endpoint: "{{ inventory_minio_host }}:{ inventory_minio_port }"
+          access_key: "admin"
+          secret_key: "{{ inventory_minio_secret_key }}"
+          insecure: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "10"
+    restart: always
+
+
+volumes:
+  prometheus_prometheus_data:
+    external: true

@@ -1,0 +1,10 @@
+{% if inventory_monitoring_complex| default("false") == "true" %}
+{
+  "service": [
+  {"name": "loki",
+    "port": 3100,
+    "tags": ["loki"]
+  }         
+  ]
+}
+{% endif %}

@@ -1,0 +1,32 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_loki_hostname }}:
+    image: grafana/loki:{{ inventory_loki_tag }}
+    hostname: {{ inventory_loki_hostname }}
+    container_name: {{ inventory_loki_hostname }}
+    networks:
+      - {{ inventory_monitoring_network }}
+    ports:
+      - {{ inventory_loki_port }}:3100
+    volumes:
+      - ./config.yml:/etc/loki/config.yml
+      - loki-data:/loki
+    command:
+      - -config.file=/etc/loki/config.yml
+      - -log.level=info
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}
+    external: true
+
+volumes:
+  loki-data:

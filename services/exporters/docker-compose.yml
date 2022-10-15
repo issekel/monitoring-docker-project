@@ -1,0 +1,82 @@
+#предполагается включать exporter в docker-compose базы
+version: "3.9"
+
+services:
+
+  postgres-core-exporter:
+    image: bitnami/postgres-exporter:v0.10.1
+    hostname: postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      - DATA_SOURCE_URI={{ inventory_netvision_core_db_hostname }}:5432?sslmode=disable
+      - DATA_SOURCE_USER={{ inventory_netvision_core_db_user }}
+      - DATA_SOURCE_PASS={{ inventory_netvision_core_db_password }}
+      - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+    networks:
+      - {{ inventory_netvision_network }}
+    restart: always
+    ports:
+      - 9187:9187
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+  postgres-finder-exporter:
+    image: bitnami/postgres-exporter:v0.10.1
+    hostname: postgres-finder-exporter
+    container_name: postgres-finder-exporter
+    environment:
+      - DATA_SOURCE_URI={{ inventory_netvision_finder_db_hostname }}:5432?sslmode=disable
+      - DATA_SOURCE_USER={{ inventory_netvision_finder_db_user }}
+      - DATA_SOURCE_PASS={{ inventory_netvision_finder_db_password }}
+      - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+    networks:
+      - {{ inventory_netvision_network }}
+    restart: always
+    ports:
+      - 9188:9187
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+  postgres-traffic-exporter:
+    image: bitnami/postgres-exporter:v0.10.1
+    hostname: postgres-traffic-exporter
+    container_name: postgres-traffic-exporter
+    environment:
+      - DATA_SOURCE_URI={{ inventory_netvision_traffic_db_hostname }}:5432?sslmode=disable
+      - DATA_SOURCE_USER={{ inventory_netvision_traffic_db_user }}
+      - DATA_SOURCE_PASS={{ inventory_netvision_traffic_db_password }}
+      - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+    networks:
+      - {{ inventory_netvision_network }}
+    restart: always
+    ports:
+      - 9189:9187
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.43.0-alpine
+    hostname: redis-exporter
+    container_name: redis-exporter
+    command:
+      - "--redis.addr=redis://redis:{{ inventory_netvision_recognition_redis_port }}"
+      - "--redis.password={{ inventory_netvision_recognition_redis_password }}"
+    networks:
+      - netvision-recognition
+    restart: always
+    ports:
+      - 9121:9121
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"

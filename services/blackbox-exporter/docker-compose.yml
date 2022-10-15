@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_blackbox_exporter_hostname }}:
+    image: prom/blackbox-exporter:{{ inventory_blackbox_exporter_tag }}
+    hostname: {{ inventory_blackbox_exporter_hostname }}
+    container_name: {{ inventory_blackbox_exporter_hostname }}
+    volumes:
+      - ./blackbox.yml:/etc/blackbox.yml
+    command:
+      - --config.file=/etc/blackbox.yml
+    restart: always
+    ports:
+      - {{ inventory_blackbox_exporter_port }}:9115
+    networks:
+      - {{ inventory_monitoring_network }}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}
+    external: true    

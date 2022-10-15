@@ -1,0 +1,347 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    location: local
+    type: {{ inventory_project_name }}
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - '{{ inventory_alertmanager_host }}:9093'
+
+rule_files:
+  - rules*
+
+scrape_configs:
+
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['localhost:9090']
+      labels:
+        service: prometheus
+        node: {{ ansible_nodename }}
+
+  - job_name: 'node_exporter_{{ inventory_project_name }}'
+    scrape_interval: 15s
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['__meta_consul_tagged_address_lan']
+        target_label: instance
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+
+  - job_name: 'blackbox_{{ inventory_project_name }}'
+    metrics_path: /probe
+    params:
+      module: [tcp]
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__meta_consul_service]
+        target_label: module
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ inventory_monitoring_host }}:9115
+
+  - job_name: 'cadvisor_{{ inventory_project_name }}'
+    scrape_interval: 5s
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+
+  - job_name: 'fluent-bit_{{ inventory_project_name }}'
+    scrape_interval: 10s
+    metrics_path: '/api/v1/metrics/prometheus'
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop
+
+  - job_name: 'grafana'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_grafana_host }}:{{ inventory_grafana_port }}']
+      labels:
+        project: {{ inventory_project_name }}
+        service: grafana
+        node: {{ ansible_nodename }}
+
+  - job_name: 'loki'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_loki_host }}:3100']
+      labels:
+        project: {{ inventory_project_name }}
+        service: loki
+        node: {{ ansible_nodename }}
+
+{% if enable_minio | default("false") == "true" %}
+  - job_name: minio-job
+    metrics_path: /minio/v2/metrics/cluster
+    scheme: http
+    static_configs:
+    - targets: ['{{ inventory_netvision_minio_host }}:{{ inventory_netvision_minio_api_port }}']
+      labels:
+        project: {{ inventory_project_name }}
+        service: minio
+        node: {{ inventory_netvision_minio_host }}
+{% endif %}
+
+  - job_name: 'redis_exporter'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_netvision_recognition_host }}:9121']
+      labels:
+        project: {{ inventory_project_name }}
+        service: recognition_redis_db
+        node: {{ inventory_netvision_recognition_host }}
+
+{% if enable_core | default("false") == "true" %}
+  - job_name: 'postgres-core-exporter'
+    metrics_path: /metrics
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['{{ inventory_netvision_core_db_host }}:9187']
+      labels:
+        project: {{ inventory_project_name }}
+        service: postgres-core_db
+        node: {{ inventory_netvision_core_db_hostname }}
+{% endif %}
+
+{% if enable_finder | default("false") == "true" %}
+  - job_name: 'postgres-finder-exporter'
+    metrics_path: /metrics
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['{{ inventory_netvision_finder_db_host }}:9188']
+      labels:
+        project: {{ inventory_project_name }}
+        service: postgres-finder_db
+        node: {{ inventory_netvision_finder_db_hostname }}
+{% endif %}
+
+{% if enable_traffic | default("false") == "true" %}
+  - job_name: 'postgres-traffic-exporter'
+    metrics_path: /metrics
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['{{ inventory_netvision_traffic_db_host }}:9189']
+      labels:
+        project: {{ inventory_project_name }}
+        service: postgres-traffic_db
+        node: {{ inventory_netvision_traffic_db_hostname }}
+{% endif %}
+
+{% if enable_core | default("false") == "true" %}
+  - job_name: 'core-metrics'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+    - targets: ['{{ inventory_netvision_core_host }}:{{ inventory_netvision_core_port }}']
+      labels:
+        project: {{ inventory_project_name }}
+        service: core
+        node: {{ inventory_netvision_core_hostname }}
+{% endif %}
+
+{% if enable_collector_kordon | default("false") == "true" %}
+  - job_name: 'collector-kordon-metrics'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+    - targets: ['{{ inventory_netvision_photo_distributor_host }}:8007']
+      labels:
+        project: {{ inventory_project_name }}
+        service: collector-kordon
+        node: {{ inventory_collector_kordon_hostname }}
+{% endif %}
+
+{% if enable_collector_avtouragan | default("false") == "true" %}
+  - job_name: 'collector-avtouragan-metrics'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+    - targets: ['{{ inventory_netvision_admin_ui_host }}:9800']
+      labels:
+        project: {{ inventory_project_name }}
+        service: collector-avtouragan
+        node: {{ inventory_netvision_admin_ui_host }}
+    - targets: ['{{ inventory_netvision_admin_ui_host }}:9801']
+      labels:
+        project: {{ inventory_project_name }}
+        service: collector-avtouragan-short
+        node: {{ inventory_netvision_admin_ui_host }}
+    - targets: ['{{ inventory_netvision_admin_ui_host }}:9802']
+      labels:
+        project: {{ inventory_project_name }}
+        service: collector-avtouragan-long
+        node: {{ inventory_netvision_admin_ui_host }}
+{% endif %}
+
+  - job_name: 'netvision_service_{{ inventory_project_name }}'
+    metrics_path: /probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [module]
+        target_label: __param_module
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ inventory_blackbox_exporter_host }}:{{ inventory_blackbox_exporter_port }}
+    static_configs:
+{% if enable_core | default("false") == "true" %}
+      - targets: ['{{ inventory_netvision_admin_ui_host }}:{{ inventory_netvision_admin_ui_port }}']
+        labels:
+          project: {{ inventory_project_name }}
+          node: {{ inventory_netvision_admin_ui_hostname }}
+          module: http
+{% endif %}
+
+{% if enable_finder | default("false") == "true" %}
+      - targets: ['{{ inventory_netvision_finder_ui_host }}:{{ inventory_netvision_finder_ui_port }}']
+        labels:
+          project: {{ inventory_project_name }}
+          node: {{ inventory_netvision_finder_ui_hostname }}
+          module: http
+{% endif %}
+
+{% if enable_traffic | default("false") == "true" %}
+      - targets: ['{{ inventory_netvision_traffic_ui_host }}:{{ inventory_netvision_traffic_ui_port }}']
+        labels:
+          project: {{ inventory_project_name }}
+          node: {{ inventory_netvision_traffic_ui_hostname }}
+          module: http
+{% endif %}
+
+{% if inventory_thanos | default("false") == "true" %}
+  - job_name: 'thanos-query'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_thanos_host }}:10902']
+      labels:
+        project: {{ inventory_project_name }}
+        service: thanos-query
+        node: {{ inventory_thanos_nodename }}
+
+  - job_name: 'thanos-store'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_thanos_host }}:10904']
+      labels:
+        project: {{ inventory_project_name }}
+        service: thanos-store
+        node: {{ inventory_thanos_nodename }}
+
+  - job_name: 'thanos-compact'
+    metrics_path: /metrics
+    static_configs:
+    - targets: ['{{ inventory_thanos_host }}:10905']
+      labels:
+        project: {{ inventory_project_name }}
+        service: thanos-compact
+        node: {{ inventory_thanos_nodename }}
+{% endif %}
+
+{% if enable_ping_complex | default("false") == "true" %}
+  - job_name: 'complex_{{ inventory_project_name }}'
+    metrics_path: /probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [module]
+        target_label: __param_module
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ inventory_blackbox_exporter_host }}:{{ inventory_blackbox_exporter_port }}
+    static_configs:
+
+{% for host in groups['complex'] %}
+      - targets: ['{{ hostvars[host].ansible_host }}']
+        labels:
+          project: {{ inventory_project_name }}
+          node: {{ hostvars[host].complex_name }}
+          module: icmp
+{% endfor %}
+{% endif %}

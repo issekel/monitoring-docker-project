@@ -1,0 +1,29 @@
+version: '3.7'
+
+services:
+
+  {{ inventory_fluentbit_hostname }}:
+    image: bitnami/fluent-bit:{{ inventory_fluentbit_tag }}
+    hostname: {{ inventory_fluentbit_hostname }}
+    container_name: {{ inventory_fluentbit_hostname }}
+    user: root
+    volumes:
+      - ./config/:/opt/bitnami/fluent-bit/conf/
+      - /var/log/:/opt/bitnami/fluent-bit/logs:ro
+      - /var/lib/docker/containers/:/opt/bitnami/fluent-bit/docker
+    restart: always
+    ports:
+      - 2020:2020
+    networks:
+      - {{ inventory_monitoring_network }}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}
+    external: true
+

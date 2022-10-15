@@ -1,0 +1,10 @@
+{% if inventory_monitoring_complex| default("false") == "true" %}
+{
+  "service": [
+  {"name": "http",
+    "port": 8000,
+    "tags": ["http"]
+  }         
+  ]
+}
+{% endif %}

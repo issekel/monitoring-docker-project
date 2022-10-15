@@ -1,0 +1,14 @@
+{
+    "Rules": [
+        {
+            "Expiration": {
+                "Days": 30
+            },
+            "ID": "Deleting old photos",
+            "Filter": {
+                "Prefix": ""
+            },
+            "Status": "Enabled"
+        }
+    ]
+}

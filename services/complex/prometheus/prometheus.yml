@@ -1,0 +1,141 @@
+global:
+  scrape_interval:     30s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 30s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+  external_labels:
+    type: complex-node-exporter-metrics
+    node: {{ inventory_hostname }}
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # - job_name: 'prometheus'
+  #   static_configs:
+  #   - targets: ['localhost:9090']
+  #     labels:
+  #       node: {{ inventory_hostname }}
+  #       service: prometheus
+
+  - job_name: 'node_exporter_{{ inventory_project_name }}'
+    scrape_interval: 15s
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['__meta_consul_tagged_address_lan']
+        target_label: instance
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+
+  - job_name: 'blackbox_{{ inventory_project_name }}'
+    metrics_path: /probe
+    params:
+      module: [tcp]
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__meta_consul_service]
+        target_label: module
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ inventory_monitoring_host }}:9115
+
+  - job_name: 'cadvisor_{{ inventory_project_name }}'
+    scrape_interval: 5s
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '2020'
+        action: drop
+
+  - job_name: 'fluent-bit_{{ inventory_project_name }}'
+    scrape_interval: 10s
+    metrics_path: '/api/v1/metrics/prometheus'
+    consul_sd_configs:
+      - server: '{{ inventory_consul_server_host }}:8500'
+    relabel_configs:
+      - source_labels: ['__meta_consul_node']
+        target_label: node
+      - source_labels: ['job']
+        target_label: project
+      - source_labels: [__meta_consul_address]
+        target_label: instance
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8300'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '22'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8000'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '9100'
+        action: drop
+      - source_labels: ['__meta_consul_service_port']
+        regex: '8885'
+        action: drop

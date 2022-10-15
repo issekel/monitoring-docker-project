@@ -1,0 +1,26 @@
+---
+
+- hosts: group-monitoring
+  gather_facts: true
+  strategy: linear
+  become: yes
+
+  roles:
+
+    - role: docker-compose-run
+      docker_compose_run_local_common_services_dir: "./services"
+      docker_compose_run_remote_services_dir: "/opt/services/monitoring"
+      docker_compose_run_transfer_images: false
+      docker_compose_run_action: present
+      docker_compose_run_services_list:
+        - consul-server
+        - blackbox-exporter
+        - loki
+        - fluent-bit
+        - prometheus
+        - alertmanager
+        - grafana
+
+  tasks:
+    - name: Выполение prometheus-reload.sh
+      shell: /opt/services/monitoring/prometheus/prometheus-reload.sh

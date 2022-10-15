@@ -1,0 +1,38 @@
+global:
+  resolve_timeout: 1m  #default: 5m Время, через которое алерт считается решенным, если в течение этого времени он не был обновлен.
+
+templates: 
+- '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'service', 'instance', 'severity']
+  group_wait: 15s  #Время задержки перед отправкой сообщений для группы. Позволяет дождаться поступления большего числа алертов и произвести эффективную группировку.
+  group_interval: 5m  #Время задержки для отправки новых уведомлений, по которым первоначальное уведомление уже было отправлено.
+  repeat_interval: 365d  #Время задержки для повторной отправки уведомления.
+  receiver: 'zulip'
+
+  routes:
+    - matchers:
+      - severity=~"error|critical"
+      receiver: 'zulip'
+      continue: false
+    - matchers:      
+      - severity=~"warning|info|none"
+      receiver: 'slack-notifications'
+      continue: false 
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+    - api_url: https://hooks.slack.com/services/your_uid
+      channel: '#monitoring'
+{% raw %}      
+      color: '{{ template "slack.color" . }}'
+      title: '{{ template "slack.title" . }}'
+      pretext: '{{ template "slack.pretext" . }}'
+      text: '{{ template "slack.text" . }}' #"\ntimestamp: {{ .CommonAnnotations.timestamp }}\nsummary: {{ .CommonAnnotations.summary }}\ndescription: {{ .CommonAnnotations.description }}"
+      send_resolved: false  #Присылать уведомление о закрытии алерта
+{% endraw %}
+  - name: 'zulip'
+    webhook_configs:
+    - url: 'https://zulip.com/api/v1/external/alertmanager?api_key=your_api&stream=monitoring&topic={{ inventory_alertmanager_channel_name }}&desc=summary'
+      send_resolved: false

@@ -1,0 +1,49 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_thanos_store_hostname }}:
+    image: quay.io/thanos/thanos:{{ inventory_thanos_tag }}
+    hostname: {{ inventory_thanos_store_hostname }}
+    container_name: {{ inventory_thanos_store_hostname }}
+    ports:
+      - 10903:10903
+      - 10904:10904
+    volumes:
+      - cache:/var/thanos/store
+    command:
+      - store
+      - --data-dir=/var/thanos/store
+      - --grpc-address=0.0.0.0:10903
+      - --http-address=0.0.0.0:10904
+      - --ignore-deletion-marks-delay=0h
+      - --store.enable-index-header-lazy-reader
+      - --store.index-header-lazy-reader-idle-timeout=60s
+      # - --block-sync-concurrency=10
+      # - --block-meta-fetch-concurrency=1
+      # - --chunk-pool-size=2GB
+      # - --index-cache-size=250MB
+      # - --consistency-delay=30m
+      # - --min-time=-1y
+      # - |
+      #   --index-cache.config=type: IN-MEMORY
+      #   config:
+      #     max_size: 1GB
+      #     max_size_item: 125MB
+      - |
+        --objstore.config=type: S3
+        config:
+          bucket: "transit-node-exporter-metrics"
+          endpoint: "{{ inventory_minio_host }}:{ inventory_minio_port }"
+          access_key: "admin"
+          secret_key: "{{ inventory_minio_secret_key }}"
+          insecure: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+    restart: always
+
+volumes:
+  cache:

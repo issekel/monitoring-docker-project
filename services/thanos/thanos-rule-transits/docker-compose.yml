@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  
+  {{ inventory_thanos_rule_hostname }}  :
+    image: quay.io/thanos/thanos:{{ inventory_thanos_tag }}
+    hostname: {{ inventory_thanos_rule_hostname }}
+    container_name: {{ inventory_thanos_rule_hostname }}    
+    ports:
+    - 10906:10906
+    - 10907:10907
+    volumes:
+     - ./config:/data/
+    command:
+     - rule
+     - --data-dir="/data/"
+     - --eval-interval=30s
+     - --rule-file=/data/rules_alert.yml
+     - --resend-delay=8700h
+     - --alert.query-url=http://{{ inventory_thanos_query_host }}:10902
+     - --alertmanagers.url=http://{{ inventory_alertmanager_host }}:9093
+     - --query={{ inventory_thanos_query_host }}:10902
+     - --grpc-address=0.0.0.0:10906
+     - --http-address=0.0.0.0:10907
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "10"
+    restart: always
+    networks:
+      - {{ inventory_monitoring_network }}        
+    
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}    

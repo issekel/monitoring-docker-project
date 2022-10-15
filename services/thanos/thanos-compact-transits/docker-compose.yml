@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_thanos_compact_hostname }}:
+    image: quay.io/thanos/thanos:{{ inventory_thanos_tag }}
+    hostname: {{ inventory_thanos_compact_hostname }}
+    container_name: {{ inventory_thanos_compact_hostname }}
+    ports:
+      - 10905:10905
+    volumes:
+      - data_compact:/var/thanos/compact
+    command:
+      - compact
+      # - --log.level=debug
+      - --data-dir=/var/thanos/compact
+      # - --downsampling.disable
+      # - --compact.enable-vertical-compaction
+      - --compact.concurrency=6
+      - --retention.resolution-raw=90d
+      - --retention.resolution-5m=180d
+      - --retention.resolution-1h=2y
+      - --block-viewer.global.sync-block-interval=15m
+      - --wait
+      - --wait-interval=30m
+      - --delete-delay=4h
+      - --compact.cleanup-interval=5m
+      - --hash-func=SHA256
+      - --http-address=0.0.0.0:10905
+      # - --index-cache-size=20GB
+      # - --chunk-pool-size=40GB
+      - |
+        --objstore.config=type: S3
+        config:
+          bucket: "transit-node-exporter-metrics"
+          endpoint: "{{ inventory_minio_host }}:{ inventory_minio_port }"
+          access_key: "admin"
+          secret_key: "{{ inventory_minio_secret_key }}"
+          insecure: true
+          trace:
+            enable: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+    restart: always
+
+volumes:
+  data_compact:

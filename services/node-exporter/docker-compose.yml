@@ -1,0 +1,25 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_node_exporter_hostname }}:
+    image: prom/node-exporter:{{ inventory_node_exporter_tag }}
+    hostname: {{ inventory_node_exporter_hostname }}
+    container_name: {{ inventory_node_exporter_hostname }}
+    pid: "host"
+    network_mode: "host"
+    volumes:
+      - /:/rootfs:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    command:
+      - --path.rootfs=/rootfs
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+    privileged: true
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"

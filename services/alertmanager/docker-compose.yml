@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+
+  {{ inventory_alertmanager_hostname }}:
+    image: prom/alertmanager:{{ inventory_alertmanager_tag }}
+    hostname: {{ inventory_alertmanager_hostname }}
+    container_name: {{ inventory_alertmanager_hostname }}
+    ports:
+      - {{ inventory_alertmanager_port }}:9093
+    volumes:
+      - ./config:/etc/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    networks:
+      - {{ inventory_monitoring_network }}
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "5"
+
+networks:
+  {{ inventory_monitoring_network }}:
+    name: {{ inventory_monitoring_network }}
+    external: true

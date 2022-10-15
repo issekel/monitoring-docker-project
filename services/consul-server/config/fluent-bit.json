@@ -1,0 +1,8 @@
+{
+  "service": [
+  {"name": "fluent-bit",
+    "port": 2020,
+    "tags": ["fluent-bit"]
+  }
+  ]
+}
