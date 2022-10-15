@@ -4,7 +4,7 @@ version: "3.9"
 services:
 
   postgres-core-exporter:
-    image: bitnami/postgres-exporter:v0.10.1
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.10.1
     hostname: postgres-exporter
     container_name: postgres-exporter
     environment:
@@ -24,7 +24,7 @@ services:
         max-file: "5"
 
   postgres-finder-exporter:
-    image: bitnami/postgres-exporter:v0.10.1
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.10.1
     hostname: postgres-finder-exporter
     container_name: postgres-finder-exporter
     environment:
@@ -44,7 +44,7 @@ services:
         max-file: "5"
 
   postgres-traffic-exporter:
-    image: bitnami/postgres-exporter:v0.10.1
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.10.1
     hostname: postgres-traffic-exporter
     container_name: postgres-traffic-exporter
     environment:
