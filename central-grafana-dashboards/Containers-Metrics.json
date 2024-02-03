@@ -54,8 +54,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14282,
   "graphTooltip": 0,
-  "id": null,
-  "iteration": 1661944226020,
+  "iteration": 1676624823719,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -63,7 +62,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "PD5316042EED40325"
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -173,7 +172,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "PD5316042EED40325"
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -370,7 +369,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "PD5316042EED40325"
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -568,7 +567,7 @@
       "collapsed": false,
       "datasource": {
         "type": "prometheus",
-        "uid": "PD5316042EED40325"
+        "uid": "${DS_PROMETHEUS}"
       },
       "gridPos": {
         "h": 1,
@@ -645,6 +644,66 @@
                   "fixedColor": "dark-green",
                   "mode": "fixed"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 144
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Label"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 88
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Registry Image"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 541
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Instance"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 139
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 131
               }
             ]
           }
@@ -755,7 +814,7 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values({__name__=~\"container.*\"},node)",
+        "definition": "label_values(node_uname_info{job=~\"node_exporter_.*\"},node)",
         "hide": 0,
         "includeAll": true,
         "label": "Host",
@@ -763,7 +822,7 @@
         "name": "host",
         "options": [],
         "query": {
-          "query": "label_values({__name__=~\"container.*\"},node)",
+          "query": "label_values(node_uname_info{job=~\"node_exporter_.*\"},node)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -805,14 +864,14 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Docker Containers Metrics",
   "uid": "pMEd7m0Mz3",
-  "version": 1,
+  "version": 52,
   "weekStart": ""
 }
 {% endraw %}

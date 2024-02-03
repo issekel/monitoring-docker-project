@@ -1,17 +1,7 @@
 ---
 
-- hosts: group-monitoring
+- hosts: complex
   gather_facts: false
-  strategy: linear
-  become: yes
-
-  tasks:
-    - name: Create docker network
-      shell: docker network create {{ inventory_monitoring_network }}
-      ignore_errors: true
-
-- hosts: group-monitoring
-  gather_facts: true
   strategy: linear
   become: yes
   vars:
@@ -30,19 +20,13 @@
         var: fluentbit_log_path
 
   roles:
+
     - role: docker-compose-run
-      docker_compose_run_local_common_services_dir: "./services"
+      docker_compose_run_local_common_services_dir: "./services/complex"
       docker_compose_run_remote_services_dir: "/opt/services/monitoring"
+      docker_compose_run_transfer_images: true
       docker_compose_run_action: present
       docker_compose_run_services_list:
-        - loki
-        - fluent-bit
-        - node-exporter
-        - prometheus
         - node-exporter
         - cadvisor
-        - grafana
-
-  tasks:
-    - name: Выполение prometheus-reload.sh
-      shell: docker restart monitoring-prometheus
+        - fluent-bit

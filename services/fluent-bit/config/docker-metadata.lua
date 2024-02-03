@@ -1,4 +1,4 @@
-DOCKER_VAR_DIR = '/opt/bitnami/fluent-bit/docker/'
+DOCKER_VAR_DIR = '/fluent-bit/etc/docker/'
 DOCKER_CONTAINER_CONFIG_FILE = '/config.v2.json'
 DOCKER_CONTAINER_METADATA = {
   ['container_name'] = '\"Name\":\"/?(.-)\"',

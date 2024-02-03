@@ -6,6 +6,7 @@ services:
     image: prom/prometheus:{{ inventory_prometheus_tag }}
     hostname: {{ inventory_prometheus_hostname }}
     container_name: {{ inventory_prometheus_hostname }}
+    privileged: true
     volumes:
       - ./config:/config
       - prometheus_data:/prometheus

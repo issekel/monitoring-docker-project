@@ -26,14 +26,14 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 21,
-  "iteration": 1663336051258,
+  "iteration": 1677762701754,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "PD5316042EED40325"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -578,7 +578,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(probe_success{node=\"$node\"}[5m]) * 100",
+          "expr": "avg_over_time(probe_success{instance=~\"$instance\"}[5m]) * 100",
           "legendFormat": "{{unit}} {{module}}",
           "range": true,
           "refId": "A"
@@ -2203,8 +2203,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "transparent",
-                "value": null
+                "color": "transparent"
               },
               {
                 "color": "red",
@@ -2301,8 +2300,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2434,8 +2432,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2544,8 +2541,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2665,8 +2661,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2772,15 +2767,15 @@
       },
       {
         "current": {
-          "selected": true,
-          "text": "101-VM-Collector-01",
-          "value": "101-VM-Collector-01"
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(node)",
+        "definition": "label_values(up{job=~\"$job\"},node)",
         "hide": 0,
         "includeAll": true,
         "label": "node",
@@ -2788,7 +2783,35 @@
         "name": "node",
         "options": [],
         "query": {
-          "query": "label_values(node)",
+          "query": "label_values(up{job=~\"$job\"},node)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(up{job=~\"$job\",node=~\"$node\"}, instance)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "instance",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(up{job=~\"$job\",node=~\"$node\"}, instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -2800,21 +2823,22 @@
       {
         "current": {
           "selected": false,
-          "text": "192.168.2.31",
-          "value": "192.168.2.31"
+          "text": "blackbox-exporter",
+          "value": "blackbox-exporter"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(node_uname_info{node=\"$node\"}, instance)",
+        "definition": "label_values(probe_success, job)",
         "hide": 0,
         "includeAll": false,
+        "label": "job",
         "multi": false,
-        "name": "instance",
+        "name": "job",
         "options": [],
         "query": {
-          "query": "label_values(node_uname_info{node=\"$node\"}, instance)",
+          "query": "label_values(probe_success, job)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -2826,7 +2850,7 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {

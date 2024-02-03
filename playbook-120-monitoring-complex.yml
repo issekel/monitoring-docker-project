@@ -8,39 +8,53 @@
     - role: docker-compose-run
       docker_compose_run_local_common_services_dir: "./services/thanos"
       docker_compose_run_remote_services_dir: "/opt/services/monitoring"
-      docker_compose_run_transfer_images: false
       docker_compose_run_action: present
       docker_compose_run_services_list:
+        - minio
+        - minio-client
         - thanos-store
         - thanos-compact
         - thanos-query
         - thanos-rule
-
-
-- hosts: complex
-  gather_facts: true
-  strategy: linear
-  become: yes
-
-  roles:
-
-    - role: docker-compose-run
-      docker_compose_run_local_common_services_dir: "./services"
-      docker_compose_run_remote_services_dir: "/opt/services/monitoring"
-      docker_compose_run_transfer_images: false
-      docker_compose_run_action: present
-      docker_compose_run_services_list:
-        - node-exporter
-        - consul-client
-        - cadvisor
-
-    - role: docker-compose-run
-      docker_compose_run_local_common_services_dir: "./services/complex"
-      docker_compose_run_remote_services_dir: "/opt/services/monitoring"
-      docker_compose_run_transfer_images: false
-      docker_compose_run_action: present
-      docker_compose_run_services_list:
-        - prometheus
         - thanos-sidecar
-        - loki
-        - fluent-bit
+
+  tasks:
+
+  - name: Check if mcli is installed
+    command: dpkg-query -W mcli
+    register: mcli_check_install
+    failed_when: mcli_check_install.rc > 1
+    changed_when: mcli_check_install.rc == 1
+
+  - name: Copy mcli-client
+    copy:
+      src: ./services/thanos/configure/mcli_20220416211121.0.0_amd64.deb
+      dest: /opt/mcli_20220416211121.0.0_amd64.deb
+      owner: root
+      group: root
+      mode: u=rwx,g=rx,o=r
+      force: no
+    when: mcli_check_install.rc == 1
+
+  - name: Install mcli-client
+    apt:
+      deb: /opt/mcli_20220416211121.0.0_amd64.deb
+      state: present
+    environment:
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    when: mcli_check_install.rc == 1
+
+  - name: Remove file
+    ansible.builtin.file:
+      path: /opt/mcli_20220416211121.0.0_amd64.deb
+      state: absent
+    when: mcli_check_install.rc == 1
+
+  - name: Set minio alias
+    shell: mcli alias set {{ inventory_project_name }} http://{{ inventory_monitoring_minio_host }}:9000 admin {{ inventory_monitoring_minio_secret_key }}
+
+  - name: Запуск удаления устаревших файлов с проверкой работы
+    ansible.builtin.cron:
+      name: "2.Запуск удаления устаревших файлов с проверкой работы каждый день"
+      day: "*/1"
+      job: "/usr/bin/flock -w 1 /tmp/mcli.lock /usr/local/bin/mcli rm {{ inventory_project_name }}/complex-metrics --recursive --dangerous --force --older-than {{ inventory_prometheus_retention }} >/dev/null 2>&1"

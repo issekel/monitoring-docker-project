@@ -1,7 +1,7 @@
 global:
   resolve_timeout: 1m  #default: 5m Время, через которое алерт считается решенным, если в течение этого времени он не был обновлен.
 
-templates: 
+templates:
 - '/etc/alertmanager/templates/*.tmpl'
 
 route:
@@ -16,16 +16,20 @@ route:
       - severity=~"error|critical"
       receiver: 'zulip'
       continue: false
-    - matchers:      
+    - matchers:
+      - severity=~"critical-logs"
+      receiver: 'zulip-logs'
+      continue: false
+    - matchers:
       - severity=~"warning|info|none"
       receiver: 'slack-notifications'
-      continue: false 
+      continue: false
 receivers:
   - name: 'slack-notifications'
     slack_configs:
     - api_url: https://hooks.slack.com/services/your_uid
       channel: '#monitoring'
-{% raw %}      
+{% raw %}
       color: '{{ template "slack.color" . }}'
       title: '{{ template "slack.title" . }}'
       pretext: '{{ template "slack.pretext" . }}'
@@ -35,4 +39,8 @@ receivers:
   - name: 'zulip'
     webhook_configs:
     - url: 'https://zulip.com/api/v1/external/alertmanager?api_key=your_api&stream=monitoring&topic={{ inventory_alertmanager_channel_name }}&desc=summary'
+      send_resolved: false
+  - name: 'zulip-logs'
+    webhook_configs:
+    - url: 'https://zulip.com.pro/api/v1/external/alertmanager?api_key=your_api&stream=monitoring&topic={{ inventory_alertmanager_channel_name }}&desc=summary'
       send_resolved: false

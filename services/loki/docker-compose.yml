@@ -12,6 +12,7 @@ services:
       - {{ inventory_loki_port }}:3100
     volumes:
       - ./config.yml:/etc/loki/config.yml
+      - ./rules.yml:/loki/rules/fake/rules.yml
       - loki-data:/loki
     command:
       - -config.file=/etc/loki/config.yml
@@ -22,6 +23,11 @@ services:
       options:
         max-size: "5m"
         max-file: "5"
+    healthcheck:
+      test: wget -q --tries=1 -O- http://127.0.0.1:3100/ready | grep -q "ready"
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 networks:
   {{ inventory_monitoring_network }}:

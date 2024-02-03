@@ -12,7 +12,7 @@ ingester:
       replication_factor: 1
     final_sleep: 0s
   wal:
-   dir: /tmp/loki/wal  
+    dir: /loki/wal
   chunk_idle_period: 30m
   chunk_target_size: 1048576
   chunk_retain_period: 30s
@@ -29,24 +29,23 @@ schema_config:
 
 storage_config:
   boltdb:
-    directory: /tmp/loki/index
+    directory: /loki/index
 
   filesystem:
-    directory: /tmp/loki/chunks
+    directory: /loki/chunks
 
 compactor:
   working_directory: /loki/compactor
   shared_store: filesystem
-  compaction_interval: 5m    
+  compaction_interval: 5m
 
 limits_config:
   enforce_metric_name: false
   reject_old_samples: true
-  reject_old_samples_max_age: 120h
+  reject_old_samples_max_age: {{ inventory_loki_reject }}
 
 chunk_store_config:
-  max_look_back_period: 240h
-
+  max_look_back_period: {{ inventory_loki_retention }}
 table_manager:
   retention_deletes_enabled: true
-  retention_period: 240h  
+  retention_period: {{ inventory_loki_retention }}

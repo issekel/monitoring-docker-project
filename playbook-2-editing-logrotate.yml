@@ -1,0 +1,32 @@
+---
+
+- hosts: all
+  gather_facts: true
+  become: yes
+
+  tasks:
+
+  - name: Install logrotate
+    ansible.builtin.apt:
+      name: logrotate
+      state: present
+
+  - name: Copy config
+    copy:
+      src: ./config/rsyslog
+      dest: /etc/logrotate.d/rsyslog
+      owner: root
+      group: root
+      mode: u=rw,g=r,o=r
+      force: yes
+
+  - name: Restart service
+    ansible.builtin.systemd:
+      state: restarted
+      name: logrotate
+
+  - name: Start logrotate
+    shell: logrotate --force  /etc/logrotate.d/
+    environment:
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+

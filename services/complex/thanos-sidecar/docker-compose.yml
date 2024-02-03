@@ -22,16 +22,16 @@ services:
       - |
         --objstore.config=type: S3
         config:
-          bucket: "transit-node-exporter-metrics"
-          endpoint: "{{ inventory_minio_host }}:{ inventory_minio_port }"
+          bucket: "complex-metrics"
+          endpoint: "{{ inventory_monitoring_minio_host }}:9000"
           access_key: "admin"
-          secret_key: "{{ inventory_minio_secret_key }}"
+          secret_key: "{{ inventory_monitoring_minio_secret_key }}"
           insecure: true
     logging:
       driver: "json-file"
       options:
         max-size: "5m"
-        max-file: "10"
+        max-file: "2"
     restart: always
 
 
